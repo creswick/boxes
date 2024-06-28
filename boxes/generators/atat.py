@@ -24,6 +24,7 @@ class ATAT(Boxes):
 
     def render(self):
         self.innerWidth = self.width - (2 * self.thickness)
+        self.shortTab = self.thickness
         self.medTab  = 1.25 * self.thickness
         self.longTab = 2 * self.thickness
         self.frontAngle = 17.7
@@ -35,18 +36,31 @@ class ATAT(Boxes):
         self.rearLength = self.width * 0.75
         self.sideLength = self.rearLength / math.sin(math.radians(90 - self.rearAngle))
         self.rearNarrowing = math.tan(math.radians(self.rearAngle)) * self.rearLength
+        self.buttWidth = self.innerWidth - (2 * self.rearNarrowing)
 
         self.noseAngle = 8.6
         self.noseLength = 9.9
+        self.noseWidth = self.innerWidth - (2 * self.frontNarrowing)
+        self.noseSide = self.noseLength / math.sin(math.radians(90 - self.noseAngle))
+        self.noseNarrow = math.tan(math.radians(self.noseAngle)) * self.noseLength
+
+        self.gunLength = 5
+        self.gunWidth = 1.5
+        self.gunEdgeSpace = 1
+
         self.neckLength = 7
 
         with self.saved_context():
             self.draw_tops()
 
-        self.moveTo(0, 2 * self.width + self.spacer)
+        self.moveTo(0, self.width + self.spacer)
 
         with self.saved_context():
             self.draw_spine()
+
+        self.moveTo(0, self.width + self.spacer)
+        with self.saved_context():
+            self.draw_cabin()
 
     def draw_tops(self):
         length, width = self.length, self.width
@@ -116,85 +130,106 @@ class ATAT(Boxes):
         length, width = self.length, self.width
         t = self.thickness
 
-        noseSide = self.noseLength / math.sin(math.radians(90 - self.noseAngle))
-        noseNarrow = math.tan(math.radians(self.noseAngle)) * self.noseLength
+        # shift up to account for the tapered shape:
+        self.moveTo(0, (self.width - self.noseWidth) / 2)
+
         # Draw the body "spine"
         self.polyline(
             0, -self.noseAngle,
-            noseSide / 3, right,
+            self.noseSide / 3, right,
             self.thickness / 2, left,
-            noseSide / 3, left,
+            self.noseSide / 3, left,
             self.thickness / 2, right,
-            noseSide / 3, 90 + self.noseAngle,
-            noseNarrow, right,
+            self.noseSide / 3, 90 + self.noseAngle,
+            self.noseNarrow, right,
             self.neckLength, -self.frontAngle,
-            self.frontSide, self.frontAngle,
-            self.centerLength, self.rearAngle,
-            self.sideLength, 90 - self.rearAngle,
-            width - (2* self.rearNarrowing), - (90 + self.rearAngle)
+
+            # front facet:
+            (self.frontSide - self.shortTab) / 2, right,
+            t, left,
+            self.shortTab, left,
+            t, right,
+            (self.frontSide - self.shortTab) / 2, self.frontAngle,
+
+            # center facet:
+            (self.centerLength - self.longTab) / 2, right,
+            t, left,
+            self.longTab, left,
+            t, right,
+            (self.centerLength - self.longTab) / 2, self.rearAngle,
+
+            # rear facet:
+            (self.sideLength - self.shortTab) / 2, right,
+            t, left,
+            self.shortTab, left,
+            t, right,
+            (self.sideLength - self.shortTab) / 2, 90 - self.rearAngle,
+
+            # butt:
+            self.buttWidth, (90 - self.rearAngle),
+
+            # Right-side features:
+
+            # rear facet:
+            (self.sideLength - self.shortTab) / 2, right,
+            t, left,
+            self.shortTab, left,
+            t, right,
+            (self.sideLength - self.shortTab) / 2, self.rearAngle,
+
+            # center facet:
+            (self.centerLength - self.longTab) / 2, right,
+            t, left,
+            self.longTab, left,
+            t, right,
+            (self.centerLength - self.longTab) / 2, self.frontAngle,
+
+            # front facet:
+            (self.frontSide - self.shortTab) / 2, right,
+            t, left,
+            self.shortTab, left,
+            t, right,
+            (self.frontSide - self.shortTab) / 2, -self.frontAngle,
+
+            # neck
+            self.neckLength, right,
+            self.noseNarrow, 90 + self.noseAngle,
+            self.noseSide / 3, right,
+            self.thickness / 2, left,
+            self.noseSide / 3, left,
+            self.thickness / 2, right,
+            self.noseSide / 3, 90 - self.noseAngle,
+
+            self.noseWidth, left
         )
 
+    def draw_cabin(self):
+        self.moveTo(0, self.noseNarrow + self.gunEdgeSpace)
 
-                      # 4.5, 82,
-                      # 3, right,
-                      # # cockpit "nub":
-                      # 1.5, left,
-                      # t, left,
-                      # 1.5, right,
+        # Draw the lower cabin (with gunmounts):
+        self.polyline(
+            self.gunLength, right,
+            self.gunEdgeSpace, 90 -self.noseAngle,
+            self.noseSide, 90 + self.noseAngle,
+            self.noseWidth + 2 * self.noseNarrow, 90 + self.noseAngle,
+            self.noseSide, left-self.noseAngle,
+            self.gunEdgeSpace, right,
+            self.gunLength, left,
+            self.gunWidth, left,
+            self.gunLength, right,
+            self.noseWidth - (2 * (self.gunWidth + self.gunEdgeSpace)), right,
+            self.gunLength, left,
+            self.gunWidth, left
+        )
 
-                      # # back of cockpit:
-                      # 4, 98,
-                      # 1.5, right,
-                      # 7, -18,
-                      # 4, right,
-                      # t, left,
-                      # t, left,
-                      # t, right,
-                      # t, 18,
-                      # 4.3, right,
-                      # t, left,
-                      # 6, left,
-                      # t, right,
-                      # 4.5, 12,
-                      # 3, right,
-                      # t, left,
-                      # 6, left,
-                      # t, right,
-                      # 3, 80,
-                      # # the butt:
-                      # 9, 80,
+        self.moveTo( self.noseLength + self.gunLength + self.spacer, -self.gunEdgeSpace);
 
-                      # ## Now, do the top edge:
-                      # 3, right,
-                      # t, left,
-                      # 6, left,
-                      # t, right,
-                      # 3, 12,
+        # Draw the upper cabin:
+        self.polyline(
+            0, -self.noseAngle,
+            self.noseSide, 90 + self.noseAngle,
+            self.noseWidth + 2 * self.noseNarrow, 90 + self.noseAngle,
+            self.noseSide, 90 - self.noseAngle,
+            self.noseWidth, left
+        )
 
-                      # # center panel:
-                      # 4.5, right,
-                      # t, left,
-                      # 6, left,
-                      # t, right,
-                      # 4.3, 18,
-
-                      # # front panel:
-                      # 3, right,
-                      # t, left,
-                      # t, left,
-                      # t, right,
-                      # 4, -18,
-
-                      # # "neck":
-                      # 7, right,
-                      # 1.5, 98,
-                      # 4, right,
-
-
-                      # # cockpit "nub":
-                      # 1.5, left,
-                      # t, left,
-                      # 1.5, right,
-
-                      # 3, right
-                      # )
